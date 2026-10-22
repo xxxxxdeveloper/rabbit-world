@@ -49,7 +49,7 @@
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // ดึง owner_id จาก URL Query String (เช่น owner.html?id=1)
+        // ดึง owner_id จาก URL Query String
         const urlParams = new URLSearchParams(window.location.search);
         const ownerId = urlParams.get('id');
 
@@ -63,59 +63,70 @@
                 return;
             }
 
-            // 1. ดึงข้อมูลรายละเอียดของเจ้าของจากตาราง users
-            const { data: ownerData, error: ownerError } = await supabaseClient
-                .from('users')
-                .select('*')
-                .eq('user_id', ownerId)
-                .single();
+            try {
+                // 1. ดึงข้อมูลรายละเอียดของเจ้าของจากตาราง users
+                const { data: ownerData, error: ownerError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('user_id', ownerId)
+                    .maybeSingle(); // ใช้ maybeSingle ป้องกัน Error กรณีไม่พบข้อมูล
 
-            if (ownerError || !ownerData) {
-                ownerContainer.innerHTML = `<p style="color: red;">ไม่พบข้อมูลเจ้าของ: ${ownerError ? ownerError.message : 'ไม่พบข้อมูล'}</p>';
-                return;
-            }
+                if (ownerError) {
+                    ownerContainer.innerHTML = `<p style="color: red;">เกิดข้อผิดพลาดที่ตาราง users: ${ownerError.message}</p>`;
+                    rabbitContainer.innerHTML = '';
+                    return;
+                }
 
-            // แปลงค่า owner_flag เป็นข้อความสถานะ
-            const roleText = ownerData.owner_flag === 1 ? 'เจ้าของฟาร์ม (Owner)' : 'ผู้ใช้งานทั่วไป';
-            
-            ownerContainer.innerHTML = `
-                <h3>${ownerData.full_name} <i class="fa-solid fa-shield-check" style="color: #0284c7;"></i></h3>
-                <p><strong>บทบาท:</strong> ${roleText}</p>
-                <p><strong>เบอร์โทรศัพท์:</strong> ${ownerData.phone || '-'}</p>
-                <p><strong>อีเมล:</strong> ${ownerData.email || '-'}</p>
-            `;
+                if (!ownerData) {
+                    ownerContainer.innerHTML = `<p style="color: red;">ไม่พบข้อมูลเจ้าของรหัส ID: ${ownerId}</p>`;
+                    rabbitContainer.innerHTML = '';
+                    return;
+                }
 
-            // 2. ดึงรายการกระต่ายทั้งหมดที่ผูกกับ owner_id นี้
-            const { data: rabbits, error: rabbitError } = await supabaseClient
-                .from('rabbit_profiles')
-                .select('*')
-                .eq('owner_id', ownerId);
-
-            if (rabbitError) {
-                rabbitContainer.innerHTML = `<div class="loading" style="color: red;">เกิดข้อผิดพลาด: ${rabbitError.message}</div>`;
-                return;
-            }
-
-            if (!rabbits || rabbits.length === 0) {
-                rabbitContainer.innerHTML = '<div class="loading">ยังไม่มีกระต่ายในความดูแลของเจ้าของท่านนี้</div>';
-                return;
-            }
-
-            rabbitContainer.innerHTML = '';
-            rabbits.forEach(rabbit => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
-                    <h3>${rabbit.name} <i class="fa-solid fa-qrcode"></i></h3>
-                    <div class="badge">${rabbit.breed}</div>
-                    <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
-                    <p><strong>เพศ:</strong> ${rabbit.gender}</p>
-                    <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
-                    <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
+                const roleText = ownerData.owner_flag === 1 ? 'เจ้าของฟาร์ม (Owner)' : 'ผู้ใช้งานทั่วไป';
+                
+                ownerContainer.innerHTML = `
+                    <h3>${ownerData.full_name} <i class="fa-solid fa-shield-check" style="color: #0284c7;"></i></h3>
+                    <p><strong>บทบาท:</strong> ${roleText}</p>
+                    <p><strong>เบอร์โทรศัพท์:</strong> ${ownerData.phone || '-'}</p>
+                    <p><strong>อีเมล:</strong> ${ownerData.email || '-'}</p>
                 `;
-                rabbitContainer.appendChild(card);
-            });
+
+                // 2. ดึงรายการกระต่ายทั้งหมดที่ผูกกับ owner_id นี้
+                const { data: rabbits, error: rabbitError } = await supabaseClient
+                    .from('rabbit_profiles')
+                    .select('*')
+                    .eq('owner_id', ownerId);
+
+                if (rabbitError) {
+                    rabbitContainer.innerHTML = `<div class="loading" style="color: red;">เกิดข้อผิดพลาด: ${rabbitError.message}</div>`;
+                    return;
+                }
+
+                if (!rabbits || rabbits.length === 0) {
+                    rabbitContainer.innerHTML = '<div class="loading">ยังไม่มีกระต่ายในความดูแลของเจ้าของท่านนี้</div>';
+                    return;
+                }
+
+                rabbitContainer.innerHTML = '';
+                rabbits.forEach(rabbit => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
+                        <h3>${rabbit.name} <i class="fa-solid fa-qrcode"></i></h3>
+                        <div class="badge">${rabbit.breed}</div>
+                        <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
+                        <p><strong>เพศ:</strong> ${rabbit.gender}</p>
+                        <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
+                        <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
+                    `;
+                    rabbitContainer.appendChild(card);
+                });
+
+            } catch (err) {
+                ownerContainer.innerHTML = `<p style="color: red;">System Error: ${err.message}</p>`;
+            }
         }
 
         fetchOwnerData();
