@@ -28,48 +28,55 @@
         </div>
     </div>
 
-    <script>
-        // 🔑 ใส่ค่า Project URL และ Anon Public Key ของสานจาก Supabase (ดูได้จากเมนู Project Settings > API)
-        const SUPABASE_URL = 'https://zuvhskifyjczghuxbkwg.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_JYXD5082CWM8FKXmEWO3IQ_UQzn3Svb';
+   <script>
+    // 🔑 ใส่ค่า Project URL และ Anon Public Key ของสานจาก Supabase (ดูได้จากเมนู Project Settings > API)
+    const SUPABASE_URL = 'https://zuvhskifyjczghuxbkwg.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_JYXD5082CWM8FKXmEWO3IQ_UQzn3Svb';
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function fetchRabbits() {
-            const container = document.getElementById('rabbit-list');
-            const { data, error } = await supabaseClient
-                .from('rabbit_profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
+    async function fetchRabbits() {
+        const container = document.getElementById('rabbit-list');
+        
+        // ดึงข้อมูลจาก rabbit_profiles พร้อมเชื่อมโยง (Join) ตาราง users เพื่อเอาชื่อเจ้าของ
+        const { data, error } = await supabaseClient
+            .from('rabbit_profiles')
+            .select('*, users(full_name, owner_flag)')
+            .order('created_at', { ascending: false });
 
-            if (error) {
-                container.innerHTML = `<div class="loading" style="color: red;">เกิดข้อผิดพลาด: ${error.message}</div>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                container.innerHTML = '<div class="loading">ยังไม่มีข้อมูลกระต่ายในระบบ</div>';
-                return;
-            }
-
-            container.innerHTML = '';
-            data.forEach(rabbit => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
-                    <h3>${rabbit.name}</h3>
-                    <div class="badge">${rabbit.breed}</div>
-                    <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
-                    <p><strong>เพศ:</strong> ${rabbit.gender}</p>
-                    <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
-                    <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
-                `;
-                container.appendChild(card);
-            });
+        if (error) {
+            container.innerHTML = `<div class="loading" style="color: red;">เกิดข้อผิดพลาด: ${error.message}</div>`;
+            return;
         }
 
-        fetchRabbits();
-    </script>
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="loading">ยังไม่มีข้อมูลกระต่ายในระบบ</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        data.forEach(rabbit => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // ตรวจสอบว่ามีข้อมูลเจ้าของผูกอยู่หรือไม่
+            const ownerName = rabbit.users ? rabbit.users.full_name : 'ไม่ระบุเจ้าของ';
+
+            card.innerHTML = `
+                <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
+                <h3>${rabbit.name}</h3>
+                <div class="badge">${rabbit.breed}</div>
+                <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
+                <p><strong>เพศ:</strong> ${rabbit.gender}</p>
+                <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
+                <p><strong>เจ้าของ:</strong> ${ownerName}</p>
+                <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    fetchRabbits();
+</script>
 </body>
 </html>
