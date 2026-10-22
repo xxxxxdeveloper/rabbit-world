@@ -70,7 +70,7 @@
                 <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
                 <p><strong>เพศ:</strong> ${rabbit.gender}</p>
                 <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
-                <p><strong>เจ้าของ:</strong> ${ownerName}</p>
+                <p><strong>เจ้าของ:</strong> <a href="owner.html?id=${rabbit.owner_id || ''}" style="color: #0284c7; text-decoration: none;">${ownerName}</a></p>
                 <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
             `;
             container.appendChild(card);
