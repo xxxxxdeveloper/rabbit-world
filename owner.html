@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbit World - ข้อมูลเจ้าของ</title>
+    <!-- นำเข้า Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- นำเข้า Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1, h2 { color: #2c3e50; }
+        .profile-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background: #eee; }
+        .card h3 { margin: 12px 0 6px; color: #333; }
+        .card p { margin: 4px 0; color: #666; font-size: 14px; }
+        .badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #0284c7; text-decoration: none; font-weight: bold; }
+        .back-btn:hover { text-decoration: underline; }
+        .loading { text-align: center; color: #888; font-size: 16px; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</a>
+        <h1>👤 ข้อมูลเจ้าของฟาร์ม</h1>
+        
+        <!-- ส่วนแสดงข้อมูลเจ้าของ -->
+        <div id="owner-info" class="profile-card">
+            <div class="loading">กำลังโหลดข้อมูลเจ้าของ...</div>
+        </div>
 
+        <h2>🐰 กระต่ายในความดูแล</h2>
+        <!-- ส่วนแสดงรายชื่อกระต่าย -->
+        <div id="rabbit-list" class="card-grid">
+            <div class="loading">กำลังโหลดข้อมูลกระต่าย...</div>
+        </div>
+    </div>
+
+    <script>
+        // 🔑 ค่าเชื่อมต่อ Supabase
+        const SUPABASE_URL = 'https://zuvhskifyjczghuxbkwg.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_JYXD5082CWM8FKXmEWO3IQ_UQzn3Svb';
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ดึง owner_id จาก URL Query String (เช่น owner.html?id=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const ownerId = urlParams.get('id');
+
+        async function fetchOwnerData() {
+            const ownerContainer = document.getElementById('owner-info');
+            const rabbitContainer = document.getElementById('rabbit-list');
+
+            if (!ownerId) {
+                ownerContainer.innerHTML = '<p style="color: red;">ไม่พบรหัสเจ้าของ (Owner ID) ในระบบ</p>';
+                rabbitContainer.innerHTML = '';
+                return;
+            }
+
+            // 1. ดึงข้อมูลรายละเอียดของเจ้าของจากตาราง users
+            const { data: ownerData, error: ownerError } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('user_id', ownerId)
+                .single();
+
+            if (ownerError || !ownerData) {
+                ownerContainer.innerHTML = `<p style="color: red;">ไม่พบข้อมูลเจ้าของ: ${ownerError ? ownerError.message : 'ไม่พบข้อมูล'}</p>';
+                return;
+            }
+
+            // แปลงค่า owner_flag เป็นข้อความสถานะ
+            const roleText = ownerData.owner_flag === 1 ? 'เจ้าของฟาร์ม (Owner)' : 'ผู้ใช้งานทั่วไป';
+            
+            ownerContainer.innerHTML = `
+                <h3>${ownerData.full_name} <i class="fa-solid fa-shield-check" style="color: #0284c7;"></i></h3>
+                <p><strong>บทบาท:</strong> ${roleText}</p>
+                <p><strong>เบอร์โทรศัพท์:</strong> ${ownerData.phone || '-'}</p>
+                <p><strong>อีเมล:</strong> ${ownerData.email || '-'}</p>
+            `;
+
+            // 2. ดึงรายการกระต่ายทั้งหมดที่ผูกกับ owner_id นี้
+            const { data: rabbits, error: rabbitError } = await supabaseClient
+                .from('rabbit_profiles')
+                .select('*')
+                .eq('owner_id', ownerId);
+
+            if (rabbitError) {
+                rabbitContainer.innerHTML = `<div class="loading" style="color: red;">เกิดข้อผิดพลาด: ${rabbitError.message}</div>`;
+                return;
+            }
+
+            if (!rabbits || rabbits.length === 0) {
+                rabbitContainer.innerHTML = '<div class="loading">ยังไม่มีกระต่ายในความดูแลของเจ้าของท่านนี้</div>';
+                return;
+            }
+
+            rabbitContainer.innerHTML = '';
+            rabbits.forEach(rabbit => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
+                    <h3>${rabbit.name} <i class="fa-solid fa-qrcode"></i></h3>
+                    <div class="badge">${rabbit.breed}</div>
+                    <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
+                    <p><strong>เพศ:</strong> ${rabbit.gender}</p>
+                    <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
+                    <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
+                `;
+                rabbitContainer.appendChild(card);
+            });
+        }
+
+        fetchOwnerData();
+    </script>
+</body>
+</html>
