@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>เพิ่มข้อมูลกระต่ายใหม่ - Rabbit World</title>
+    <!-- FontAwesome & CSS styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .form-container { max-width: 500px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; box-sizing: border-box; }
+        .btn-submit { background-color: #0284c7; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-submit:hover { background-color: #0369a1; }
+        .error-msg { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2><i class="fa-solid fa-square-plus"></i> เพิ่มข้อมูลกระต่ายใหม่</h2>
+    <form id="addRabbitForm">
+        <div class="form-group">
+            <label for="rabbitName">ชื่อกระต่าย *</label>
+            <input type="text" id="rabbitName" required placeholder="ระบุชื่อกระต่าย">
+        </div>
+
+        <div class="form-group">
+            <label for="breed">สายพันธุ์</label>
+            <input type="text" id="breed" placeholder="หากไม่ทราบ ระบบจะใส่ MU mix unknow">
+        </div>
+
+        <div class="form-group">
+            <label for="gender">เพศ</label>
+            <select id="gender">
+                <option value="male">ผู้ (Male)</option>
+                <option value="female">เมีย (Female)</option>
+                <option value="unknown">ไม่ระบุ</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="birthDate">วันเกิด</label>
+            <input type="date" id="birthDate">
+        </div>
+
+        <button type="submit" class="btn-submit">บันทึกข้อมูลกระต่าย</button>
+        <div id="formMessage"></div>
+    </form>
+</div>
+
+<script type="module">
+    // นำเข้า Supabase Client ของเรา
+    import { supabaseClient } from './supabaseClient.js'; // ปรับ path ตามโครงสร้างโปรเจกต์
+
+    // รายชื่อคำสงวนที่ไม่ให้ใช้ตั้งชื่อ
+    const reservedWords = ['newton', 'ashton', 'turing'];
+
+    document.getElementById('addRabbitForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const messageDiv = document.getElementById('formMessage');
+        messageDiv.innerHTML = 'กำลังบันทึกข้อมูล...';
+
+        let name = document.getElementById('rabbitName').value.trim();
+        let breed = document.getElementById('breed').value.trim();
+        const gender = document.getElementById('gender').value;
+        const birthDate = document.getElementById('birthDate').value || null;
+
+        // 1. กำหนดค่าสายพันธุ์พื้นฐานถ้าไม่ได้ระบุ
+        if (!breed) {
+            breed = 'MU mix unknow';
+        }
+
+        // 2. ตรวจสอบ規則คำสงวน
+        if (reservedWords.includes(name.toLowerCase())) {
+            messageDiv.innerHTML = `<span class="error-msg">ไม่อนุญาตให้ใช้ชื่อคำสงวน (${name})</span>`;
+            return;
+        }
+
+        // 3. ตรวจสอบชื่อซ้ำกับกระต่ายที่มีชีวิตอยู่ในฐานข้อมูล
+        const { data: existingRabbits, error: checkError } = await supabaseClient
+            .from('rabbit_profiles')
+            .select('id')
+            .eq('name', name)
+            .eq('is_alive', true);
+
+        if (checkError) {
+            messageDiv.innerHTML = `<span class="error-msg">เกิดข้อผิดพลาดในการตรวจสอบชื่อ: ${checkError.message}</span>`;
+            return;
+        }
+
+        if (existingRabbits && existingRabbits.length > 0) {
+            messageDiv.innerHTML = `<span class="error-msg">ชื่อ "${name}" มีกระต่ายในฟาร์มใช้งานอยู่แล้ว โปรดใช้ชื่ออื่น</span>`;
+            return;
+        }
+
+        // 4. บันทึกข้อมูลลงตาราง rabbit_profiles
+        // สมมติรับ owner_id มาจาก session หรือ URL query
+        const urlParams = new URLSearchParams(window.location.search);
+        const ownerId = urlParams.get('owner_id') || 1; // ตัวอย่าง owner_id
+
+        const { data, error } = await supabaseClient
+            .from('rabbit_profiles')
+            .insert([
+                {
+                    name: name,
+                    breed: breed,
+                    gender: gender,
+                    birth_date: birthDate,
+                    owner_id: ownerId,
+                    is_alive: true
+                }
+            ]);
+
+        if (error) {
+            messageDiv.innerHTML = `<span class="error-msg">บันทึกไม่สำเร็จ: ${error.message}</span>`;
+        } else {
+            messageDiv.style.color = 'green';
+            messageDiv.innerHTML = 'บันทึกข้อมูลกระต่ายเรียบร้อยแล้ว!';
+            document.getElementById('addRabbitForm').reset();
+        }
+    });
+</script>
+
+</body>
+</html>
