@@ -22,6 +22,27 @@
     </style>
 </head>
 <body>
+
+<!-- 1. จุดสำหรับแสดงผล Nav -->
+    <div id="navigation-placeholder"></div>
+
+    <!-- เนื้อหาหลักของหน้า Index -->
+    <div style="padding: 20px;">
+        <h1>ยินดีต้อนรับสู่ Rabbit World 🐰</h1>
+        <p>ระบบบริหารจัดการฟาร์มกระต่ายและคอมมูนิตี้</p>
+    </div>
+
+    <!-- 2. สคริปต์สำหรับดึงไฟล์ nav.html มาใส่ -->
+    <script>
+        fetch('nav.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('navigation-placeholder').innerHTML = data;
+            })
+            .catch(error => console.error('Error loading nav:', error));
+    </script>
+
+    
     <div class="container">
         <h1>🐰 Rabbit World Profile Cards</h1>
         <div id="rabbit-list" class="card-grid">
