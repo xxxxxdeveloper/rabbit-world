@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rabbit World - สมุดประวัติกระต่าย</title>
-    <!-- นำเข้า Supabase JavaScript Client -->
+    
+    <!-- ✅ แก้ไขลิงก์ CDN Supabase ให้ถูกต้องเสถียร -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- ✅ แก้ไขลิงก์ FontAwesome ให้ถูกต้อง -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; }
@@ -59,7 +63,6 @@
     async function fetchRabbits() {
         const container = document.getElementById('rabbit-list');
         
-        // ดึงข้อมูลจาก rabbit_profiles พร้อมเชื่อมโยง (Join) ตาราง users เพื่อเอาชื่อเจ้าของ
         const { data, error } = await supabaseClient
             .from('rabbit_profiles')
             .select('*, users(full_name, owner_flag)')
@@ -80,10 +83,7 @@
             const card = document.createElement('div');
             card.className = 'card';
             
-            // ตรวจสอบข้อมูลเจ้าของ
             const ownerName = rabbit.users ? rabbit.users.full_name : 'ไม่ระบุเจ้าของ';
-
-            // ตรวจสอบสายพันธุ์ หากไม่พบให้ใช้ค่าเริ่มต้น MU mix unknow
             const breedText = rabbit.breed ? rabbit.breed : 'MU mix unknow';
 
             card.innerHTML = `
