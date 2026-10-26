@@ -50,9 +50,9 @@
         </div>
     </div>
 
-   <script>
+  <script>
     // 🔑 ค่า Project URL และ Anon Public Key ของ Supabase
-    const SUPABASE_URL = '[https://zuvhskifyjczghuxbkwg.supabase.co](https://zuvhskifyjczghuxbkwg.supabase.co)';
+    const SUPABASE_URL = 'https://zuvhskifyjczghuxbkwg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_JYXD5082CWM8FKXmEWO3IQ_UQzn3Svb';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -60,6 +60,7 @@
     async function fetchRabbits() {
         const container = document.getElementById('rabbit-list');
         
+        // ดึงข้อมูลจาก rabbit_profiles พร้อมเชื่อมโยง (Join) ตาราง users เพื่อเอาชื่อเจ้าของ
         const { data, error } = await supabaseClient
             .from('rabbit_profiles')
             .select('*, users(full_name, owner_flag)')
@@ -80,11 +81,14 @@
             const card = document.createElement('div');
             card.className = 'card';
             
+            // ตรวจสอบข้อมูลเจ้าของ
             const ownerName = rabbit.users ? rabbit.users.full_name : 'ไม่ระบุเจ้าของ';
+
+            // ตรวจสอบสายพันธุ์ หากไม่พบให้ใช้ค่าเริ่มต้น MU mix unknow
             const breedText = rabbit.breed ? rabbit.breed : 'MU mix unknow';
 
             card.innerHTML = `
-                <img src="${rabbit.photo_url || '[https://via.placeholder.com/300x180?text=No+Image](https://via.placeholder.com/300x180?text=No+Image)'}" alt="${rabbit.name}">
+                <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
                 <h3>${rabbit.name} <i class="fa-solid fa-qrcode"></i></h3>
                 <div class="badge">${breedText}</div>
                 <p><strong>Microchip:</strong> ${rabbit.microchip_id || '-'}</p>
