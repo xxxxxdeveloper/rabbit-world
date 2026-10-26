@@ -23,16 +23,16 @@
 </head>
 <body>
 
-<!-- 1. จุดสำหรับแสดงผล Nav -->
+    <!-- 1. จุดสำหรับแสดงผล Nav กลาง -->
     <div id="navigation-placeholder"></div>
 
-    <!-- เนื้อหาหลักของหน้า Index -->
-    <div style="padding: 20px;">
+    <!-- เนื้อหาหลักหัวข้อ -->
+    <div style="padding: 20px; text-align: center;">
         <h1>ยินดีต้อนรับสู่ Rabbit World 🐰</h1>
         <p>ระบบบริหารจัดการฟาร์มกระต่ายและคอมมูนิตี้</p>
     </div>
 
-    <!-- 2. สคริปต์สำหรับดึงไฟล์ nav.html มาใส่ -->
+    <!-- 2. สคริปต์สำหรับดึงไฟล์ nav.html มาแสดงผล -->
     <script>
         fetch('nav.html')
             .then(response => response.text())
@@ -41,7 +41,6 @@
             })
             .catch(error => console.error('Error loading nav:', error));
     </script>
-
     
     <div class="container">
         <h1>🐰 Rabbit World Profile Cards</h1>
@@ -51,7 +50,7 @@
     </div>
 
    <script>
-    // 🔑 ใส่ค่า Project URL และ Anon Public Key ของสานจาก Supabase (ดูได้จากเมนู Project Settings > API)
+    // 🔑 ค่า Project URL และ Anon Public Key ของ Supabase
     const SUPABASE_URL = 'https://zuvhskifyjczghuxbkwg.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_JYXD5082CWM8FKXmEWO3IQ_UQzn3Svb';
 
@@ -81,15 +80,18 @@
             const card = document.createElement('div');
             card.className = 'card';
             
-            // ตรวจสอบว่ามีข้อมูลเจ้าของผูกอยู่หรือไม่
+            // ตรวจสอบข้อมูลเจ้าของ
             const ownerName = rabbit.users ? rabbit.users.full_name : 'ไม่ระบุเจ้าของ';
+
+            // ตรวจสอบสายพันธุ์ หากไม่พบให้ใช้ค่าเริ่มต้น MU mix unknow
+            const breedText = rabbit.breed ? rabbit.breed : 'MU mix unknow';
 
             card.innerHTML = `
                 <img src="${rabbit.photo_url || 'https://via.placeholder.com/300x180?text=No+Image'}" alt="${rabbit.name}">
-                <h3>${rabbit.name}</h3> <i class="fa-solid fa-qrcode"></i>
-                <div class="badge">${rabbit.breed}</div>
-                <p><strong>Microchip:</strong> ${rabbit.microchip_id}</p>
-                <p><strong>เพศ:</strong> ${rabbit.gender}</p>
+                <h3>${rabbit.name} <i class="fa-solid fa-qrcode"></i></h3>
+                <div class="badge">${breedText}</div>
+                <p><strong>Microchip:</strong> ${rabbit.microchip_id || '-'}</p>
+                <p><strong>เพศ:</strong> ${rabbit.gender || '-'}</p>
                 <p><strong>สี/ลวดลาย:</strong> ${rabbit.color_pattern || '-'}</p>
                 <p><strong>เจ้าของ:</strong> <a href="owner.html?id=${rabbit.owner_id || ''}" style="color: #0284c7; text-decoration: none;">${ownerName}</a></p>
                 <p><strong>บันทึกสุขภาพ:</strong> ${rabbit.health_notes || '-'}</p>
